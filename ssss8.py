@@ -82,24 +82,7 @@ def sucet_kapacita():
 
 @app.route('/registracia', methods=['GET'])
 def registracia_form():
-    return '''
-        <h2>Registrácia trénera</h2>
-        <form action="/registracia" method="post">
-            <label>Meno:</label><br>
-            <input type="text" name="meno" required><br><br>
-            <label>Priezvisko:</label><br>
-            <input type="text" name="priezvisko" required><br><br>
-            <label>Špecializácia:</label><br>
-            <input type="text" name="specializacia" required><br><br>
-            <label>Telefón:</label><br>
-            <input type="text" name="telefon" required><br><br>
-            <label>Heslo:</label><br>
-            <input type="password" name="heslo" required><br><br>
-            <button type="submit">Registrovať</button>
-        </form>
-        <hr>
-        <a href="/"><button>Späť</button></a>
-    '''
+    return render_template("registracia.html")
 
 @app.route('/registracia', methods=['POST'])
 def registracia_trenera():
