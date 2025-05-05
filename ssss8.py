@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 import sqlite3
 import hashlib
 
@@ -64,11 +64,7 @@ def treneri_kurzy():
 def kurzy():
     query = "SELECT * FROM Kurzy_View"
     data = query_db(query)
-    vystup = "<h2>Zoznam kurzov:</h2>"
-    for kurz in data:
-        vystup += f"<p>{kurz}</p>"
-    vystup += '<a href="/"><button>Späť</button></a>'
-    return vystup
+    return render_template("kurzy.html",data=data)
 
 @app.route('/treneri_priezvisko')
 def treneri_priezvisko():
