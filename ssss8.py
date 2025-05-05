@@ -54,11 +54,7 @@ def home():
 def treneri_kurzy():
     query = "SELECT * FROM Treneri_Kurzy_View"
     data = query_db(query)
-    vystup = "<h2>Zoznam trénerov a ich kurzov:</h2>"
-    for trener in data:
-        vystup += f"<p>{trener}</p>"
-    vystup += '<a href="/"><button>Späť</button></a>'
-    return vystup
+    return render_template("treneri.html", data=data)
 
 @app.route('/kurzy')
 def kurzy():
