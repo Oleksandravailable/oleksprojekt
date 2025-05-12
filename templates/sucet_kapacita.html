@@ -2,18 +2,14 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Kurzy</title>
+    <title>Súčet kapacity kurzov</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
 </head>
 
 <body>
-    <h2>Zoznam kurzov</h2>
+    <h2>Súčet maximálnej kapacity kurzov, ktoré začínajú na 'P'</h2>
 
-    <ul>
-        {% for kurz in data %}
-            <li>{{ kurz }}</li>
-        {% endfor %}
-    </ul>
+    <p>{{ kapacita }}</p>
 
     <a href="/" class="button-spat">Späť</a>
 </body>

@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, render_template
 import sqlite3
 import hashlib
 
@@ -39,16 +39,13 @@ def affine_encrypt(text):
 
 @app.route('/')
 def home():
-    return '''
-        <h1>Výber z databázy</h1>
-        <a href="/registracia"><button>Registruj trénera</button></a>
-        <a href="/treneri_kurzy"><button>Tréneri a ich kurzy</button></a>
-        <a href="/kurzy"><button>Kurzy</button></a>
-        <a href="/treneri_priezvisko"><button>Tréneri podľa priezviska</button></a>
-        <a href="/sucet_kapacita"><button>Súčet kapacity kurzov (P)</button></a>
-        <a href="/add_course_form"><button>Pridať kurz</button></a>
-        <hr>
-    '''
+    return render_template("index.html")
+
+@app.route('/kurzy')
+def kurzy():
+    query = "SELECT * FROM Kurzy_View"
+    data = query_db(query)
+    return render_template("kurzy.html", data=data)
 
 @app.route('/treneri_kurzy')
 def treneri_kurzy():
@@ -56,29 +53,17 @@ def treneri_kurzy():
     data = query_db(query)
     return render_template("treneri.html", data=data)
 
-@app.route('/kurzy')
-def kurzy():
-    query = "SELECT * FROM Kurzy_View"
-    data = query_db(query)
-    return render_template("kurzy.html",data=data)
-
 @app.route('/treneri_priezvisko')
 def treneri_priezvisko():
     query = "SELECT * FROM Treneri_Priezvisko_View"
     data = query_db(query)
-    vystup = "<h2>Tréneri podľa priezviska:</h2>"
-    for trener in data:
-        vystup += f"<p>{trener}</p>"
-    vystup += '<a href="/"><button>Späť</button></a>'
-    return vystup
+    return render_template("treneri_priezvisko.html", data=data)
 
 @app.route('/sucet_kapacita')
 def sucet_kapacita():
     query = "SELECT SUM(Max_pocet_ucastnikov) FROM Kurzy WHERE Nazov_kurzu LIKE 'P%'"
     data = query_db(query)
-    vystup = f"<h2>Súčet maximálnej kapacity kurzov, ktoré začínajú na 'P': {data[0][0]}</h2>"
-    vystup += '<a href="/"><button>Späť</button></a>'
-    return vystup
+    return render_template("sucet_kapacita.html", kapacita=data[0][0])
 
 @app.route('/registracia', methods=['GET'])
 def registracia_form():
@@ -95,30 +80,11 @@ def registracia_trenera():
     query = '''INSERT INTO Treneri (Meno, Priezvisko, Specializacia, Telefon, Heslo)
                VALUES (?, ?, ?, ?, ?)'''
     query_db(query, args=(meno, priezvisko, specializacia, telefon, heslo_hash), commit=True)
-    return '''
-        <h2>Tréner bol úspešne zaregistrovaný!</h2>
-        <hr>
-        <a href="/"><button>Späť</button></a>
-    '''
+    return render_template("registracia_uspesna.html")
 
 @app.route('/add_course_form', methods=['GET'])
 def add_course_form():
-    return '''
-        <h2>Pridať kurz</h2>
-        <form action="/add_course" method="post">
-            <label>Názov kurzu:</label><br>
-            <input type="text" name="course_name" required><br><br>
-            <label>Typ športu:</label><br>
-            <input type="text" name="course_type" required><br><br>
-            <label>Maximálna kapacita:</label><br>
-            <input type="number" name="capacity" required><br><br>
-            <label>ID trénera:</label><br>
-            <input type="number" name="trainer_id" required><br><br>
-            <button type="submit">Pridať kurz</button>
-        </form>
-        <hr>
-        <a href="/"><button>Späť</button></a>
-    '''
+    return render_template("pridat_kurz.html")
 
 @app.route('/add_course', methods=['POST'])
 def add_course():
@@ -131,11 +97,7 @@ def add_course():
     query = '''INSERT INTO Kurzy (nazov_kurzu, typ_sportu, max_pocet_ucastnikov, id_trenera)
                VALUES (?, ?, ?, ?)'''
     query_db(query, args=(encrypted_name, encrypted_type, capacity, trainer_id), commit=True)
-    return '''
-        <h2>Kurz bol úspešne pridaný!</h2>
-        <hr>
-        <a href="/"><button>Späť</button></a>
-    '''
+    return render_template("kurz_uspesne_pridany.html")
 
 if __name__ == '__main__':
     app.run(debug=True)
