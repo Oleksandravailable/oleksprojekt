@@ -10,8 +10,8 @@
     <h2>Tréneri podľa priezviska</h2>
 
     <ul>
-        {% for trener in data %}
-            <li>{{ trener }}</li>
+        {% for trener in treneri %}
+            <li>{{ trener.meno }} {{ trener.priezvisko }}</li>
         {% endfor %}
     </ul>
 

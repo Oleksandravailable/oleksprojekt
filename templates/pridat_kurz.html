@@ -19,8 +19,12 @@
         <label for="capacity">Maximálna kapacita:</label>
         <input type="number" id="capacity" name="capacity" required><br><br>
 
-        <label for="trainer_id">ID trénera:</label>
-        <input type="number" id="trainer_id" name="trainer_id" required><br><br>
+        <label for="trainer_id">Tréner:</label>
+        <select id="trainer_id" name="trainer_id">
+            {% for trener in treneri %}
+                <option value="{{ trener.id_trenera }}">{{ trener.meno }} {{ trener.priezvisko }}</option>
+            {% endfor %}
+        </select><br><br>
 
         <button type="submit">Pridať kurz</button>
     </form>

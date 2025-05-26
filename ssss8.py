@@ -1,41 +1,31 @@
 from flask import Flask, request, render_template
-import sqlite3
+from flask_sqlalchemy import SQLAlchemy
 import hashlib
+import os
 
-app = Flask(__name__)
+app = Flask(__name__, instance_relative_config=True)
+db_path = os.path.join(app.instance_path, "kurzy.db")
+app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{db_path}".replace("\\", "//")
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+db = SQLAlchemy(app)
 
-def pripoj_db():
-    conn = sqlite3.connect("kurzy.db")
-    return conn
+class Trener(db.Model):
+    __tablename__ = "Treneri"
+    ID_Trenera = db.Column(db.Integer, primary_key=True)
+    Meno = db.Column(db.String, nullable=False)
+    Priezvisko = db.Column(db.String, nullable=False)
+    Specializacia = db.Column(db.String)
+    Telefon = db.Column(db.String)
+    Heslo = db.Column(db.String, nullable=False)
+    Kurzy = db.relationship("Kurz", backref="Trener", lazy=True)
 
-def query_db(query, args=(), commit=False):
-    conn = pripoj_db()
-    cursor = conn.cursor()
-    cursor.execute(query, args)
-    if commit:
-        conn.commit()
-        conn.close()
-        return
-    data = cursor.fetchall()
-    conn.close()
-    return data
-
-def hash_password(password):
-    return hashlib.sha256(password.encode()).hexdigest()
-
-def affine_encrypt(text):
-    A = 5
-    B = 8
-    encrypted_text = ""
-    for char in text:
-        if char.isalpha():
-            char = char.upper()
-            x = ord(char) - ord('A')
-            encrypted_char = (A * x + B) % 26
-            encrypted_text += chr(encrypted_char + ord('A'))
-        else:
-            encrypted_text += char
-    return encrypted_text
+class Kurz(db.Model):
+    __tablename__ = "Kurzy"
+    ID_Kurzu = db.Column(db.Integer, primary_key=True)
+    Nazov_Kurzu = db.Column(db.String, nullable=False)
+    Typ_Sportu = db.Column(db.String)
+    Max_Pocet_Ucastnikov = db.Column(db.Integer)
+    ID_Trenera = db.Column(db.Integer, db.ForeignKey('Treneri.ID_Trenera'))  
 
 @app.route('/')
 def home():
@@ -43,48 +33,41 @@ def home():
 
 @app.route('/kurzy')
 def kurzy():
-    query = "SELECT * FROM Kurzy_View"
-    data = query_db(query)
-    return render_template("kurzy.html", data=data)
-
-@app.route('/treneri_kurzy')
-def treneri_kurzy():
-    query = "SELECT * FROM Treneri_Kurzy_View"
-    data = query_db(query)
-    return render_template("treneri.html", data=data)
-
-@app.route('/treneri_priezvisko')
-def treneri_priezvisko():
-    query = "SELECT * FROM Treneri_Priezvisko_View"
-    data = query_db(query)
-    return render_template("treneri_priezvisko.html", data=data)
+    kurzy = Kurz.query.all()
+    return render_template("kurzy.html", kurzy=kurzy)
 
 @app.route('/sucet_kapacita')
 def sucet_kapacita():
-    query = "SELECT SUM(Max_pocet_ucastnikov) FROM Kurzy WHERE Nazov_kurzu LIKE 'P%'"
-    data = query_db(query)
-    return render_template("sucet_kapacita.html", kapacita=data[0][0])
+    kapacita = db.session.query(db.func.sum(Kurz.Max_Pocet_Ucastnikov)).scalar()
+    return render_template("sucet_kapacita.html", kapacita=kapacita)
 
-@app.route('/registracia', methods=['GET'])
-def registracia_form():
+@app.route('/treneri_priezvisko')
+def treneri_priezvisko():
+    treneri = Trener.query.order_by(Trener.Priezvisko).all()
+    return render_template("treneri_priezvisko.html", treneri=treneri)
+
+@app.route('/registracia', methods=['GET', 'POST'])
+def registracia():
+    if request.method == 'POST':
+        meno = request.form['meno']
+        priezvisko = request.form['priezvisko']
+        specializacia = request.form['specializacia']
+        telefon = request.form['telefon']
+        heslo = request.form['heslo']
+        heslo_hash = hashlib.sha256(heslo.encode()).hexdigest()
+
+        novy_trener = Trener(Meno=meno, Priezvisko=priezvisko, Specializacia=specializacia, Telefon=telefon, Heslo=heslo_hash)
+        db.session.add(novy_trener)
+        db.session.commit()
+
+        return render_template("registracia_uspesna.html")
+    
     return render_template("registracia.html")
 
-@app.route('/registracia', methods=['POST'])
-def registracia_trenera():
-    meno = request.form['meno']
-    priezvisko = request.form['priezvisko']
-    specializacia = request.form['specializacia']
-    telefon = request.form['telefon']
-    heslo = request.form['heslo']
-    heslo_hash = hash_password(heslo)
-    query = '''INSERT INTO Treneri (Meno, Priezvisko, Specializacia, Telefon, Heslo)
-               VALUES (?, ?, ?, ?, ?)'''
-    query_db(query, args=(meno, priezvisko, specializacia, telefon, heslo_hash), commit=True)
-    return render_template("registracia_uspesna.html")
-
-@app.route('/add_course_form', methods=['GET'])
+@app.route('/add_course_form')
 def add_course_form():
-    return render_template("pridat_kurz.html")
+    treneri = Trener.query.all()
+    return render_template("pridat_kurz.html", treneri=treneri)
 
 @app.route('/add_course', methods=['POST'])
 def add_course():
@@ -92,12 +75,22 @@ def add_course():
     course_type = request.form['course_type']
     capacity = request.form['capacity']
     trainer_id = request.form['trainer_id']
-    encrypted_name = affine_encrypt(course_name)
-    encrypted_type = affine_encrypt(course_type)
-    query = '''INSERT INTO Kurzy (nazov_kurzu, typ_sportu, max_pocet_ucastnikov, id_trenera)
-               VALUES (?, ?, ?, ?)'''
-    query_db(query, args=(encrypted_name, encrypted_type, capacity, trainer_id), commit=True)
+
+    novy_kurz = Kurz(Nazov_Kurzu=course_name, Typ_Sportu=course_type, Max_Pocet_Ucastnikov=capacity, ID_Trenera=trainer_id)
+    db.session.add(novy_kurz)
+    db.session.commit()
+
     return render_template("kurz_uspesne_pridany.html")
+
+@app.route('/treneri')
+def treneri():
+    treneri = Trener.query.all()
+    return render_template("treneri.html", treneri=treneri)
+
+@app.route('/Treneri_Kurzy')
+def Treneri_Kurzy():
+    treneri = Trener.query.all()
+    return render_template("Treneri_Kurzy.html", treneri=treneri)
 
 if __name__ == '__main__':
     app.run(debug=True)

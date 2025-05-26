@@ -2,16 +2,16 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Tréneri a ich kurzy</title>
+    <title>Tréneri</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
 </head>
 
 <body>
-    <h2>Tréneri a ich kurzy</h2>
+    <h2>Zoznam trénerov</h2>
 
     <ul>
-        {% for trener in data %}
-            <li>{{ trener }}</li>
+        {% for trener in treneri %}
+            <li>{{ trener.meno }} {{ trener.priezvisko }} – Špecializácia: {{ trener.specializacia }}</li>
         {% endfor %}
     </ul>
 

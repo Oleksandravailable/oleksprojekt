@@ -10,8 +10,8 @@
     <h2>Zoznam kurzov</h2>
 
     <ul>
-        {% for kurz in data %}
-            <li>{{ kurz }}</li>
+        {% for kurz in kurzy %}
+            <li>{{ kurz.nazov_kurzu }} (ID: {{ kurz.id_kurzu }})</li>
         {% endfor %}
     </ul>
 

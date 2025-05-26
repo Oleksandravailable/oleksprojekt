@@ -17,7 +17,11 @@
         <input type="text" id="priezvisko" name="priezvisko" required><br><br>
 
         <label for="specializacia">Špecializácia:</label>
-        <input type="text" id="specializacia" name="specializacia" required><br><br>
+        <select id="specializacia" name="specializacia">
+            {% for specializacia in specializacie %}
+                <option value="{{ specializacia.nazov }}">{{ specializacia.nazov }}</option>
+            {% endfor %}
+        </select><br><br>
 
         <label for="telefon">Telefón:</label>
         <input type="text" id="telefon" name="telefon" required><br><br>
@@ -31,4 +35,3 @@
     <a href="/" class="button-spat">Späť</a>
 </body>
 </html>
-
